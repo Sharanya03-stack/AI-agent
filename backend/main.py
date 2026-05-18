@@ -1,9 +1,10 @@
-﻿from agents.analyzer import LogTriageAgent
+﻿from backend.agents.analyzer import LogTriageAgent
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 app = FastAPI(title="CI/CD Triage Agent API", version="1.0.0")
+triage_agent = LogTriageAgent()
 
 app.add_middleware(
     CORSMiddleware,

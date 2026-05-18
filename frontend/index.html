@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CI/CD Triage Agent Dashboard</title>
+    <style>
+        :root {
+            --bg-dark: #0a0e17;
+            --panel-bg: #121824;
+            --accent-neon: #00f0ff;
+            --accent-green: #39ff14;
+            --accent-error: #ff3131;
+            --text-main: #e2e8f0;
+            --text-dim: #94a3b8;
+            --border-glow: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Architecture */
+        .sidebar {
+            width: 260px;
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border-glow);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .logo-area h2 {
+            color: var(--accent-neon);
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+
+        .logo-area p {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 0.2rem;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-item.active, .nav-item:hover {
+            background-color: rgba(0, 240, 255, 0.1);
+            color: var(--accent-neon);
+            border-left: 3px solid var(--accent-neon);
+        }
+
+        /* Main Viewport Workspace */
+        .workspace {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Metric Grid Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .metric-card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            padding: 1.5rem;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 100%;
+            background-color: var(--accent-neon);
+        }
+
+        .metric-card.alert::before { background-color: var(--accent-error); }
+        .metric-card.success::before { background-color: var(--accent-green); }
+
+        .metric-title { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; }
+        .metric-value { font-size: 1.8rem; font-weight: bold; color: #fff; }
+
+        /* Interactive Drag & Drop Area */
+        .upload-container {
+            background-color: var(--panel-bg);
+            border: 2px dashed var(--accent-neon);
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.02);
+        }
+
+        .upload-container:hover {
+            background-color: rgba(0, 240, 255, 0.02);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.1);
+        }
+
+        .upload-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+
+        /* AI Analysis Presentation Box */
+        .analysis-panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 2rem;
+            display: none; /* Initially hidden until log is parsed */
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-glow);
+            padding-bottom: 1rem;
+        }
+
+        .badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .badge-danger { background-color: rgba(255, 49, 49, 0.2); color: var(--accent-error); }
+        .badge-success { background-color: rgba(57, 255, 20, 0.2); color: var(--accent-green); }
+
+        .snippet-box {
+            background-color: #05070b;
+            border: 1px solid #1e293b;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #ff9e3b;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 250px;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: var(--accent-neon);
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo-area">
+            <h2>CI/CD Agent</h2>
+            <p>Hindsight Triage Engine v1.0</p>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active">Dashboard</li>
+            <li class="nav-item">Incident Memory</li>
+            <li class="nav-item">Cost Optimization</li>
+        </ul>
+    </div>
+
+    <div class="workspace">
+        <header>
+            <h1>Triage Workspace</h1>
+            <p style="color: var(--text-dim);">Upload a raw build log to extract failure telemetry instantly.</p>
+        </header>
+
+        <div class="metrics-grid">
+            <div class="metric-card" id="card-status">
+                <div class="metric-title">System Status</div>
+                <div class="metric-value" style="color: var(--accent-green);">Ready</div>
+            </div>
+            <div class="metric-card alert" id="card-severity">
+                <div class="metric-title">Detected Severity</div>
+                <div class="metric-value" id="val-severity">--</div>
+            </div>
+            <div class="metric-card success" id="card-routing">
+                <div class="metric-title">Cost Savings Tier</div>
+                <div class="metric-value" id="val-tier" style="font-size:1.2rem; margin-top:0.4rem;">--</div>
+            </div>
+        </div>
+
+        <div class="upload-container" id="dropzone">
+            <span class="upload-icon">🚀</span>
+            <h3>Drag & Drop Build Log File Here</h3>
+            <p style="color: var(--text-dim); margin-top: 0.5rem; font-size: 0.9rem;">or click to browse local files (.log, .txt)</p>
+            <input type="file" id="file-input" style="display: none;" accept=".log,.txt">
+        </div>
+
+        <div class="loading-spinner" id="loader">
+            ⚡ Preprocessing log data and routing to Triage Models...
+        </div>
+
+        <div class="analysis-panel" id="analysis-box">
+            <div class="panel-header">
+                <h2 id="log-name">build_failure_log.txt</h2>
+                <div id="retry-badge" class="badge">--</div>
+            </div>
+            
+            <div>
+                <h3 style="color: var(--accent-neon); margin-bottom: 0.5rem;">Root Cause Analysis</h3>
+                <p id="analysis-root-cause">Extracting data...</p>
+            </div>
+
+            <div>
+                <h3 style="color: var(--accent-green); margin-bottom: 0.5rem;">Recommended Fix</h3>
+                <p id="analysis-fix" style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 6px; border-left: 3px solid var(--accent-green);">Awaiting instructions...</p>
+            </div>
+
+            <div>
+                <h3 style="color: var(--text-dim); margin-bottom: 0.5rem;">Targeted Log Error Signature Window</h3>
+                <pre class="snippet-box" id="analysis-snippet"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
