@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CI/CD Triage Agent Core</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600;800&viewport=width=device-width" rel="stylesheet">
+    <title>CI/CD Triage Agent Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -19,370 +18,111 @@
             --text-main: #f8fafc;
             --text-muted: #64748b;
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Sidebar Navigation Matrix */
-        .sidebar {
-            width: 280px;
-            background-color: var(--sidebar-bg);
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 2.5rem 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 3rem;
-            z-index: 10;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .brand-logo {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
-        }
-
-        .brand-text h2 {
-            font-size: 1.15rem;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            background: linear-gradient(to right, #fff, #94a3b8);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .brand-text span {
-            font-size: 0.7rem;
-            color: var(--neon-cyan);
-            font-family: 'JetBrains Mono', monospace;
-            text-transform: uppercase;
-        }
-
-        .nav-menu {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.85rem 1rem;
-            color: var(--text-muted);
-            text-decoration: none;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid transparent;
-        }
-
-        .nav-link:hover, .nav-link.active {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.03);
-            border-color: rgba(255, 255, 255, 0.05);
-        }
-
-        .nav-link.active {
-            background: linear-gradient(90deg, rgba(0, 240, 255, 0.08) 0%, transparent 100%);
-            border-left: 3px solid var(--neon-cyan);
-            color: var(--neon-cyan);
-        }
-
-        /* Workspace Display Viewports */
-        .viewport {
-            flex: 1;
-            padding: 2.5rem;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-
-        .tab-content { display: none; flex-direction: column; gap: 2rem; }
-        .tab-content.active { display: flex; }
-
-        .view-header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; }
-        .view-header p { color: var(--text-muted); margin-top: 0.25rem; font-size: 0.95rem; }
-
-        /* KPI Score Cards */
-        .metrics-shelf {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .kpi-card {
-            background: var(--card-bg);
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            border-radius: 16px;
-            padding: 1.5rem;
-            backdrop-filter: blur(20px);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .kpi-card::after {
-            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-        }
-
-        .kpi-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-        .kpi-value { font-size: 1.75rem; font-weight: 800; margin-top: 0.25rem; color: #fff; }
-
-        /* Modern Dropzone Panel */
-        .dropzone-box {
-            background: rgba(11, 17, 32, 0.4);
-            border: 2px dashed rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 4rem 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-        }
-
-        .dropzone-box:hover {
-            border-color: var(--neon-cyan);
-            background: rgba(0, 240, 255, 0.01);
-            box-shadow: 0 0 30px rgba(0, 240, 255, 0.05);
-        }
-
-        .dropzone-box svg {
-            width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 1.25rem;
-            transition: transform 0.3s ease;
-        }
-
-        .dropzone-box:hover svg { transform: translateY(-5px); color: var(--neon-cyan); }
-
-        /* Split-Pane Analytics Grid Layout */
-        .analytics-block {
-            display: grid;
-            grid-template-columns: 1.60fr 1fr;
-            gap: 1.5rem;
-            display: none;
-            animation: slideUp 0.4s ease forwards;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .panel-glass {
-            background: var(--card-bg);
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            border-radius: 18px;
-            padding: 1.75rem;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-            backdrop-filter: blur(20px);
-        }
-
-        .pane-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
-
-        /* Code & Log Display Modules */
-        .code-block-wrapper { position: relative; margin-top: 0.5rem; }
-        
-        .code-snippet {
-            background: #03060f;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 12px;
-            padding: 1.25rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            color: #e2e8f0;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            max-height: 320px;
-        }
-
-        .action-badge {
-            position: absolute; top: 10px; right: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 0.35rem 0.7rem; border-radius: 6px;
-            font-size: 0.75rem; font-weight: 600; color: #fff; cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .action-badge:hover { background: rgba(255, 255, 255, 0.15); }
-
-        .tag-pill {
-            padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
-        }
-        .tag-green { background: rgba(57, 255, 20, 0.1); color: var(--neon-green); border: 1px solid rgba(57, 255, 20, 0.2); }
-        .tag-red { background: rgba(255, 49, 49, 0.1); color: var(--neon-red); border: 1px solid rgba(255, 49, 49, 0.2); }
-
-        /* Loader Core Components */
-        .spinner-shield {
-            display: none; text-align: center; padding: 3rem; background: rgba(11, 17, 32, 0.3); border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.02);
-        }
-        .spinner {
-            width: 40px; height: 40px; border: 3px solid rgba(0, 240, 255, 0.1); border-top-color: var(--neon-cyan);
-            border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite; margin-bottom: 1rem;
-        }
-        @keyframes spin { to { transform: rotate(300deg); } }
-
-        /* Interactive Historical Table Viewport */
-        .db-table {
-            width: 100%; border-collapse: collapse; text-align: left; margin-top: 1rem;
-        }
-        .db-table th { padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .db-table td { padding: 1.25rem 1rem; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.02); color: #cbd5e1; }
-        .db-table tbody tr:hover { background: rgba(255,255,255,0.01); }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+        .container { display: flex; width: 100%; height: 100%; }
+        .sidebar { width: 320px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-neon); padding: 25px 20px; display: flex; flex-direction: column; gap: 20px; }
+        .brand { font-size: 22px; font-weight: bold; color: var(--neon-cyan); letter-spacing: 1px; border-bottom: 1px solid var(--border-neon); padding-bottom: 15px; }
+        .main-content { flex: 1; padding: 35px; overflow-y: auto; display: flex; flex-direction: column; gap: 25px; }
+        .dropzone { border: 2px dashed var(--neon-cyan); background: var(--card-bg); border-radius: 10px; padding: 25px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .dropzone:hover { box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .vault-btn { background: transparent; padding: 8px 14px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; width: 100%; text-align: left; }
+        .vault-btn.timeout { border: 1px solid var(--neon-red); color: var(--neon-red); }
+        .vault-btn.timeout:hover { background: rgba(255, 49, 49, 0.1); }
+        .vault-btn.assert { border: 1px solid var(--neon-purple); color: var(--neon-purple); }
+        .vault-btn.assert:hover { background: rgba(157, 78, 221, 0.1); }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .kpi-card { background: var(--card-bg); border: 1px solid var(--border-neon); border-radius: 8px; padding: 15px; }
+        .kpi-val { font-size: 22px; font-weight: bold; margin-top: 5px; color: var(--neon-cyan); }
+        .output-box { background: var(--card-bg); border: 1px solid var(--border-neon); border-radius: 8px; padding: 25px; display: none; }
+        pre { background: #02040a; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: monospace; color: #39ff14; margin-top: 10px; max-height: 180px; }
+        .ledger-item { display: flex; justify-content: space-between; font-size: 13px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
     </style>
 </head>
 <body>
-
-    <div class="sidebar">
-        <div class="brand">
-            <div class="brand-logo"></div>
-            <div class="brand-text">
-                <h2>Triage Engine</h2>
-                <span>Hindsight Matrix v1.2</span>
-            </div>
-        </div>
-        <ul class="nav-menu">
-            <li><a href="#" class="nav-link active" data-tab="dashboard">Dashboard Workspace</a></li>
-            <li><a href="#" class="nav-link" data-tab="memory">Incident Memory Ledger</a></li>
-        </ul>
-    </div>
-
-    <div class="viewport">
-        <div id="dashboard" class="tab-content active">
-            <header class="view-header">
-                <h1>Triage Workspace</h1>
-                <p>Drop active repository build-logs into the processing center to trace failure patterns.</p>
-            </header>
-
-            <div class="metrics-shelf">
-                <div class="kpi-card">
-                    <div>
-                        <div class="kpi-title">Runtime Diagnostics</div>
-                        <div class="kpi-value" id="kpi-status" style="color: var(--neon-green);">Standby</div>
-                    </div>
-                </div>
-                <div class="kpi-card">
-                    <div>
-                        <div class="kpi-title">Identified Class Severity</div>
-                        <div class="kpi-value" id="kpi-severity">--</div>
-                    </div>
-                </div>
-                <div class="kpi-card">
-                    <div>
-                        <div class="kpi-title">Execution Tier Allocation</div>
-                        <div class="kpi-value" id="kpi-tier" style="font-size: 1.25rem; margin-top: 0.6rem;">--</div>
-                    </div>
+    <div class="container">
+        <div class="sidebar">
+            <div class="brand"> Triage Control Panel</div>
+            
+            <div style="padding: 15px; background: rgba(2,4,10,0.5); border: 1px solid var(--border-neon); border-radius: 8px;">
+                <h4 style="margin-bottom: 10px; color: var(--neon-cyan); font-size: 14px;">⚙️ Agent Matrix Settings</h4>
+                <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 5px;">CascadeFlow Strategy:</label>
+                <select style="width: 100%; background: #02040a; color: white; border: 1px solid var(--border-neon); padding: 5px; border-radius: 4px; font-size: 12px; outline: none;">
+                    <option>Speculative Fast Drafter (Cost-Efficient)</option>
+                    <option>Deep Reasoning Fallback (Strict Verify)</option>
+                </select>
+                <div style="display: flex; gap: 8px; font-size: 12px; margin-top: 12px; align-items: center;">
+                    <input type="checkbox" checked id="mem-db-toggle" style="accent-color: var(--neon-green)"> 
+                    <span style="color: var(--neon-green);">Hindsight Active Retention</span>
                 </div>
             </div>
 
-            <div class="dropzone-box" id="dropzone">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
-                </svg>
-                <h3>Stream File Logs to Neural Workspace</h3>
-                <p style="color: var(--text-muted); margin-top: 0.4rem; font-size: 0.85rem;">Drag and drop file data here, or click to browse files (.log, .txt)</p>
-                <input type="file" id="file-input" style="display: none;" accept=".log,.txt">
-            </div>
-
-            <div class="spinner-shield" id="loader">
-                <div class="spinner"></div>
-                <h4 style="font-weight:600;">Processing Log Streams...</h4>
-                <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0.25rem;">Routing text data to localized semantic model layers</p>
-            </div>
-
-            <div class="analytics-block" id="analysis-box">
-                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-                    <div class="panel-glass">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
-                            <h3 id="lbl-filename" style="font-size:1.25rem; font-weight:700;">failure_signature.log</h3>
-                            <span id="badge-retry" class="tag-pill tag-green">Safe</span>
-                        </div>
-                        <div style="margin-bottom: 1.25rem;">
-                            <h4 style="color: var(--neon-cyan); font-size:0.85rem; text-transform:uppercase; margin-bottom:0.25rem;">Root Cause Insight</h4>
-                            <p id="lbl-root-cause" style="font-size:0.95rem; line-height:1.5;">Data extract window...</p>
-                        </div>
-                        <div>
-                            <h4 style="color: var(--neon-green); font-size:0.85rem; text-transform:uppercase; margin-bottom:0.4rem;">Targeted Resolution Runbook</h4>
-                            <div class="code-block-wrapper">
-                                <button class="action-badge" onclick="copyText('lbl-fix')">Copy Runbook</button>
-                                <div id="lbl-fix" style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--neon-green); font-size: 0.9rem; line-height: 1.5;">Awaiting data processing sequence...</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="panel-glass">
-                        <h3 class="pane-title">Extracted Error Signature Scope Window</h3>
-                        <div class="code-block-wrapper">
-                            <button class="action-badge" onclick="copyText('lbl-snippet')">Copy Lines</button>
-                            <pre class="code-snippet" id="lbl-snippet"></pre>
-                        </div>
-                    </div>
+            <div style="padding: 15px; background: rgba(2,4,10,0.5); border: 1px dashed var(--border-neon); border-radius: 8px;">
+                <h4 style="margin-bottom: 12px; color: var(--neon-cyan); font-size: 14px;">⚡ Judge Quick-Test Vault</h4>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="vault-btn timeout" onclick="injectMockLog('timeout')"> Simulate Net Timeout</button>
+                    <button class="vault-btn assert" onclick="injectMockLog('assert')"> Simulate Test Failure</button>
                 </div>
+            </div>
 
-                <div class="panel-glass" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 350px;">
-                    <h3 class="pane-title" style="align-self:flex-start; margin-bottom:2rem;">Data Compression Profile</h3>
-                    <div style="position: relative; width: 100%; max-width: 220px; aspect-ratio: 1; margin: auto;">
-                        <canvas id="chart-compression"></canvas>
-                    </div>
-                    <div id="lbl-chart-desc" style="text-align:center; color: var(--text-muted); font-size:0.85rem; margin-top:1.5rem; line-height:1.4;">Optimization metric tracing parameters.</div>
+            <div style="flex: 1; padding: 15px; background: rgba(2,4,10,0.5); border: 1px solid var(--border-neon); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden;">
+                <h4 style="color: var(--neon-purple); font-size: 14px; margin-bottom: 10px;"> Hindsight Memory Ledger</h4>
+                <div id="ledger-list" style="flex: 1; overflow-y: auto; color: var(--text-main);">
+                    <div style="font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 20px;">No historical traces stored yet. Scan logs to populate memory indexes.</div>
                 </div>
             </div>
         </div>
 
-        <div id="memory" class="tab-content">
-            <header class="view-header">
-                <h1>Hindsight Memory Bank Ledger</h1>
-                <p>Persistent SQLite telemetry tracking recurring failures across historical operational cycles.</p>
-            </header>
-            <div class="panel-glass">
-                <table class="db-table">
-                    <thead>
-                        <tr>
-                            <th>Error Fingerprint Signature</th>
-                            <th>Total Recurrences</th>
-                            <th>Last Timestamp Observed</th>
-                            <th>Assigned AI Handler</th>
-                        </tr>
-                    </thead>
-                    <tbody id="memory-table-body">
-                        <tr>
-                            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 3rem;">No telemetry data saved inside SQLite engine index tables yet. Run logs to spin database records.</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div class="main-content">
+            <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+                <p style="font-size: 18px; margin-bottom: 8px;">Drag & Drop CI/CD Log Output Files Here</p>
+                <p style="color: var(--text-muted); font-size: 13px;">or click to browse your local workspace filesystem storage</p>
+                <input type="file" id="fileInput" style="display: none;" onchange="handleFileDrop(this.files[0])">
+            </div>
+
+            <div id="retry-gate-banner" style="padding: 12px; border-radius: 6px; font-weight: bold; text-align: center; background: var(--card-bg); border: 1px solid var(--border-neon); color: var(--text-muted); transition: 0.3s;">
+                📋 Awaiting Pipeline Crash Log Submission...
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card"><div>Assigned Routing Tier</div><div class="kpi-val" id="kpi-tier">--</div></div>
+                <div class="kpi-card"><div>Confidence Level</div><div class="kpi-val" id="kpi-conf">--</div></div>
+                <div class="kpi-card"><div>Hindsight Recurrences</div><div class="kpi-val" id="kpi-memory">--</div></div>
+                <div class="kpi-card"><div>Data Footprint Shift</div><div class="kpi-val" id="kpi-saved">--</div></div>
+            </div>
+
+            <div style="background: var(--card-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-neon);">
+                <h4 style="color: var(--neon-cyan); margin-bottom: 12px; font-size: 15px;">📊 Telemetry Performance Matrix</h4>
+                <canvas id="metricsChart" style="max-height: 150px;"></canvas>
+            </div>
+
+            <div class="output-box" id="outputInspector">
+                <h3 style="color: var(--neon-cyan); margin-bottom: 15px;">🔍 Triage Execution Report</h3>
+                <p><strong>Detected File Target:</strong> <span id="out-file" style="color: var(--neon-green)"></span></p>
+                <p style="margin-top: 10px;"><strong>Root Cause Summary:</strong></p>
+                <div id="out-cause" style="padding: 10px; background: rgba(0,0,0,0.2); border-left: 3px solid var(--neon-cyan); margin: 5px 0; font-size: 14px;"></div>
+                <p style="margin-top: 10px;"><strong>Suggested Fix Strategy:</strong></p>
+                <div id="out-fix" style="padding: 10px; background: rgba(0,0,0,0.2); border-left: 3px solid var(--neon-green); margin: 5px 0; font-size: 14px;"></div>
+                <p style="margin-top: 12px;"><strong>Extracted Critical Log Trace:</strong></p>
+                <pre id="out-snippet"></pre>
+
+                <button onclick="generateGitHubIssueMarkdown()" style="margin-top: 20px; width: 100%; background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s;">
+                     Auto-Format as GitHub Issue Template
+                </button>
+            </div>
+
+            <div class="chat-card" style="background: var(--card-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-neon);">
+                <h4 style="color: var(--neon-cyan); margin-bottom: 12px; font-size: 15px;">💬 Live Triage Consulting Agent</h4>
+                <div id="chat-history" style="height: 130px; overflow-y: auto; background: rgba(2,4,10,0.4); padding: 10px; border-radius: 5px; font-size: 13px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="color: var(--text-muted);">🤖 Ask me specific questions about applying the recommended fix patch context or lockfile adjustments...</div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="chat-input" placeholder="Ask follow up context questions..." style="flex: 1; background: #02040a; border: 1px solid var(--border-neon); border-radius: 4px; padding: 10px; color: white; font-size: 13px; outline: none;">
+                    <button onclick="sendChatMessage()" style="background: var(--neon-cyan); border: none; color: black; padding: 0 20px; border-radius: 4px; font-weight: bold; cursor: pointer;">Send</button>
+                </div>
             </div>
         </div>
     </div>
-
     <script src="app.js"></script>
 </body>
 </html>

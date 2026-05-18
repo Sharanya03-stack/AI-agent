@@ -74,4 +74,4 @@ class HindsightMemoryDB:
                 "is_repeated_incident": is_repeated,
                 "historical_occurrence_count": new_count,
                 "assigned_resolution_owner": resolved_by
-            }
+            }# 1. Align terminal with your active project path roots
