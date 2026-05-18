@@ -1,265 +1,384 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CI/CD Triage Agent Dashboard</title>
+    <title>CI/CD Triage Agent Core</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600;800&viewport=width=device-width" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-dark: #0a0e17;
-            --panel-bg: #121824;
-            --accent-neon: #00f0ff;
-            --accent-green: #39ff14;
-            --accent-error: #ff3131;
-            --text-main: #e2e8f0;
-            --text-dim: #94a3b8;
-            --border-glow: #1e293b;
+            --bg-main: #060913;
+            --sidebar-bg: #0b1120;
+            --card-bg: rgba(15, 23, 42, 0.6);
+            --border-neon: rgba(0, 240, 255, 0.2);
+            --neon-cyan: #00f0ff;
+            --neon-green: #39ff14;
+            --neon-purple: #9d4edd;
+            --neon-red: #ff3131;
+            --text-main: #f8fafc;
+            --text-muted: #64748b;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         body {
-            background-color: var(--bg-dark);
+            background-color: var(--bg-main);
             color: var(--text-main);
             display: flex;
             height: 100vh;
             overflow: hidden;
         }
 
-        /* Sidebar Architecture */
+        /* Sidebar Navigation Matrix */
         .sidebar {
-            width: 260px;
-            background-color: var(--panel-bg);
-            border-right: 1px solid var(--border-glow);
-            padding: 2rem 1.5rem;
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 2.5rem 1.5rem;
             display: flex;
             flex-direction: column;
-            gap: 2rem;
+            gap: 3rem;
+            z-index: 10;
         }
 
-        .logo-area h2 {
-            color: var(--accent-neon);
-            font-size: 1.4rem;
-            letter-spacing: 1px;
-            text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
-        .logo-area p {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            margin-top: 0.2rem;
+        .brand-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
         }
 
-        .nav-links {
+        .brand-text h2 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text span {
+            font-size: 0.7rem;
+            color: var(--neon-cyan);
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+        }
+
+        .nav-menu {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 0.8rem;
+            gap: 0.5rem;
         }
 
-        .nav-item {
-            padding: 0.75rem 1rem;
-            color: var(--text-dim);
-            cursor: pointer;
-            border-radius: 6px;
-            transition: all 0.3s ease;
-            font-weight: 500;
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.85rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
         }
 
-        .nav-item.active, .nav-item:hover {
-            background-color: rgba(0, 240, 255, 0.1);
-            color: var(--accent-neon);
-            border-left: 3px solid var(--accent-neon);
+        .nav-link:hover, .nav-link.active {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.05);
         }
 
-        /* Main Viewport Workspace */
-        .workspace {
+        .nav-link.active {
+            background: linear-gradient(90deg, rgba(0, 240, 255, 0.08) 0%, transparent 100%);
+            border-left: 3px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+        }
+
+        /* Workspace Display Viewports */
+        .viewport {
             flex: 1;
-            padding: 2rem;
+            padding: 2.5rem;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 2rem;
         }
 
-        /* Metric Grid Cards */
-        .metrics-grid {
+        .tab-content { display: none; flex-direction: column; gap: 2rem; }
+        .tab-content.active { display: flex; }
+
+        .view-header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; }
+        .view-header p { color: var(--text-muted); margin-top: 0.25rem; font-size: 0.95rem; }
+
+        /* KPI Score Cards */
+        .metrics-shelf {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 1.5rem;
         }
 
-        .metric-card {
-            background-color: var(--panel-bg);
-            border: 1px solid var(--border-glow);
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
             padding: 1.5rem;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .metric-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 4px; height: 100%;
-            background-color: var(--accent-neon);
-        }
-
-        .metric-card.alert::before { background-color: var(--accent-error); }
-        .metric-card.success::before { background-color: var(--accent-green); }
-
-        .metric-title { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; }
-        .metric-value { font-size: 1.8rem; font-weight: bold; color: #fff; }
-
-        /* Interactive Drag & Drop Area */
-        .upload-container {
-            background-color: var(--panel-bg);
-            border: 2px dashed var(--accent-neon);
-            border-radius: 12px;
-            padding: 3rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.02);
-        }
-
-        .upload-container:hover {
-            background-color: rgba(0, 240, 255, 0.02);
-            box-shadow: 0 0 25px rgba(0, 240, 255, 0.1);
-        }
-
-        .upload-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
-
-        /* AI Analysis Presentation Box */
-        .analysis-panel {
-            background-color: var(--panel-bg);
-            border: 1px solid var(--border-glow);
-            border-radius: 12px;
-            padding: 2rem;
-            display: none; /* Initially hidden until log is parsed */
-            flex-direction: column;
-            gap: 1.5rem;
-            animation: fadeIn 0.5s ease forwards;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .panel-header {
+            backdrop-filter: blur(20px);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border-glow);
-            padding-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
 
-        .badge {
-            padding: 0.4rem 0.8rem;
+        .kpi-card::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+        }
+
+        .kpi-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .kpi-value { font-size: 1.75rem; font-weight: 800; margin-top: 0.25rem; color: #fff; }
+
+        /* Modern Dropzone Panel */
+        .dropzone-box {
+            background: rgba(11, 17, 32, 0.4);
+            border: 2px dashed rgba(255, 255, 255, 0.1);
             border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: bold;
+            padding: 4rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
-        .badge-danger { background-color: rgba(255, 49, 49, 0.2); color: var(--accent-error); }
-        .badge-success { background-color: rgba(57, 255, 20, 0.2); color: var(--accent-green); }
 
-        .snippet-box {
-            background-color: #05070b;
-            border: 1px solid #1e293b;
-            padding: 1rem;
-            border-radius: 6px;
-            font-family: 'Courier New', Courier, monospace;
+        .dropzone-box:hover {
+            border-color: var(--neon-cyan);
+            background: rgba(0, 240, 255, 0.01);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.05);
+        }
+
+        .dropzone-box svg {
+            width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 1.25rem;
+            transition: transform 0.3s ease;
+        }
+
+        .dropzone-box:hover svg { transform: translateY(-5px); color: var(--neon-cyan); }
+
+        /* Split-Pane Analytics Grid Layout */
+        .analytics-block {
+            display: grid;
+            grid-template-columns: 1.60fr 1fr;
+            gap: 1.5rem;
+            display: none;
+            animation: slideUp 0.4s ease forwards;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel-glass {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 18px;
+            padding: 1.75rem;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            backdrop-filter: blur(20px);
+        }
+
+        .pane-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+
+        /* Code & Log Display Modules */
+        .code-block-wrapper { position: relative; margin-top: 0.5rem; }
+        
+        .code-snippet {
+            background: #03060f;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 1.25rem;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 0.85rem;
-            color: #ff9e3b;
+            line-height: 1.5;
+            color: #e2e8f0;
             overflow-x: auto;
             white-space: pre-wrap;
-            max-height: 250px;
+            max-height: 320px;
         }
 
-        .loading-spinner {
-            display: none;
-            text-align: center;
-            padding: 2rem;
-            color: var(--accent-neon);
-            font-weight: bold;
-            font-size: 1.1rem;
+        .action-badge {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 0.35rem 0.7rem; border-radius: 6px;
+            font-size: 0.75rem; font-weight: 600; color: #fff; cursor: pointer;
+            transition: all 0.2s;
         }
+
+        .action-badge:hover { background: rgba(255, 255, 255, 0.15); }
+
+        .tag-pill {
+            padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+        }
+        .tag-green { background: rgba(57, 255, 20, 0.1); color: var(--neon-green); border: 1px solid rgba(57, 255, 20, 0.2); }
+        .tag-red { background: rgba(255, 49, 49, 0.1); color: var(--neon-red); border: 1px solid rgba(255, 49, 49, 0.2); }
+
+        /* Loader Core Components */
+        .spinner-shield {
+            display: none; text-align: center; padding: 3rem; background: rgba(11, 17, 32, 0.3); border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 3px solid rgba(0, 240, 255, 0.1); border-top-color: var(--neon-cyan);
+            border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite; margin-bottom: 1rem;
+        }
+        @keyframes spin { to { transform: rotate(300deg); } }
+
+        /* Interactive Historical Table Viewport */
+        .db-table {
+            width: 100%; border-collapse: collapse; text-align: left; margin-top: 1rem;
+        }
+        .db-table th { padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .db-table td { padding: 1.25rem 1rem; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.02); color: #cbd5e1; }
+        .db-table tbody tr:hover { background: rgba(255,255,255,0.01); }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="logo-area">
-            <h2>CI/CD Agent</h2>
-            <p>Hindsight Triage Engine v1.0</p>
+        <div class="brand">
+            <div class="brand-logo"></div>
+            <div class="brand-text">
+                <h2>Triage Engine</h2>
+                <span>Hindsight Matrix v1.2</span>
+            </div>
         </div>
-        <ul class="nav-links">
-            <li class="nav-item active">Dashboard</li>
-            <li class="nav-item">Incident Memory</li>
-            <li class="nav-item">Cost Optimization</li>
+        <ul class="nav-menu">
+            <li><a href="#" class="nav-link active" data-tab="dashboard">Dashboard Workspace</a></li>
+            <li><a href="#" class="nav-link" data-tab="memory">Incident Memory Ledger</a></li>
         </ul>
     </div>
 
-    <div class="workspace">
-        <header>
-            <h1>Triage Workspace</h1>
-            <p style="color: var(--text-dim);">Upload a raw build log to extract failure telemetry instantly.</p>
-        </header>
+    <div class="viewport">
+        <div id="dashboard" class="tab-content active">
+            <header class="view-header">
+                <h1>Triage Workspace</h1>
+                <p>Drop active repository build-logs into the processing center to trace failure patterns.</p>
+            </header>
 
-        <div class="metrics-grid">
-            <div class="metric-card" id="card-status">
-                <div class="metric-title">System Status</div>
-                <div class="metric-value" style="color: var(--accent-green);">Ready</div>
+            <div class="metrics-shelf">
+                <div class="kpi-card">
+                    <div>
+                        <div class="kpi-title">Runtime Diagnostics</div>
+                        <div class="kpi-value" id="kpi-status" style="color: var(--neon-green);">Standby</div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div>
+                        <div class="kpi-title">Identified Class Severity</div>
+                        <div class="kpi-value" id="kpi-severity">--</div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div>
+                        <div class="kpi-title">Execution Tier Allocation</div>
+                        <div class="kpi-value" id="kpi-tier" style="font-size: 1.25rem; margin-top: 0.6rem;">--</div>
+                    </div>
+                </div>
             </div>
-            <div class="metric-card alert" id="card-severity">
-                <div class="metric-title">Detected Severity</div>
-                <div class="metric-value" id="val-severity">--</div>
+
+            <div class="dropzone-box" id="dropzone">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                </svg>
+                <h3>Stream File Logs to Neural Workspace</h3>
+                <p style="color: var(--text-muted); margin-top: 0.4rem; font-size: 0.85rem;">Drag and drop file data here, or click to browse files (.log, .txt)</p>
+                <input type="file" id="file-input" style="display: none;" accept=".log,.txt">
             </div>
-            <div class="metric-card success" id="card-routing">
-                <div class="metric-title">Cost Savings Tier</div>
-                <div class="metric-value" id="val-tier" style="font-size:1.2rem; margin-top:0.4rem;">--</div>
+
+            <div class="spinner-shield" id="loader">
+                <div class="spinner"></div>
+                <h4 style="font-weight:600;">Processing Log Streams...</h4>
+                <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0.25rem;">Routing text data to localized semantic model layers</p>
+            </div>
+
+            <div class="analytics-block" id="analysis-box">
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div class="panel-glass">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+                            <h3 id="lbl-filename" style="font-size:1.25rem; font-weight:700;">failure_signature.log</h3>
+                            <span id="badge-retry" class="tag-pill tag-green">Safe</span>
+                        </div>
+                        <div style="margin-bottom: 1.25rem;">
+                            <h4 style="color: var(--neon-cyan); font-size:0.85rem; text-transform:uppercase; margin-bottom:0.25rem;">Root Cause Insight</h4>
+                            <p id="lbl-root-cause" style="font-size:0.95rem; line-height:1.5;">Data extract window...</p>
+                        </div>
+                        <div>
+                            <h4 style="color: var(--neon-green); font-size:0.85rem; text-transform:uppercase; margin-bottom:0.4rem;">Targeted Resolution Runbook</h4>
+                            <div class="code-block-wrapper">
+                                <button class="action-badge" onclick="copyText('lbl-fix')">Copy Runbook</button>
+                                <div id="lbl-fix" style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--neon-green); font-size: 0.9rem; line-height: 1.5;">Awaiting data processing sequence...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel-glass">
+                        <h3 class="pane-title">Extracted Error Signature Scope Window</h3>
+                        <div class="code-block-wrapper">
+                            <button class="action-badge" onclick="copyText('lbl-snippet')">Copy Lines</button>
+                            <pre class="code-snippet" id="lbl-snippet"></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-glass" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 350px;">
+                    <h3 class="pane-title" style="align-self:flex-start; margin-bottom:2rem;">Data Compression Profile</h3>
+                    <div style="position: relative; width: 100%; max-width: 220px; aspect-ratio: 1; margin: auto;">
+                        <canvas id="chart-compression"></canvas>
+                    </div>
+                    <div id="lbl-chart-desc" style="text-align:center; color: var(--text-muted); font-size:0.85rem; margin-top:1.5rem; line-height:1.4;">Optimization metric tracing parameters.</div>
+                </div>
             </div>
         </div>
 
-        <div class="upload-container" id="dropzone">
-            <span class="upload-icon">🚀</span>
-            <h3>Drag & Drop Build Log File Here</h3>
-            <p style="color: var(--text-dim); margin-top: 0.5rem; font-size: 0.9rem;">or click to browse local files (.log, .txt)</p>
-            <input type="file" id="file-input" style="display: none;" accept=".log,.txt">
-        </div>
-
-        <div class="loading-spinner" id="loader">
-            ⚡ Preprocessing log data and routing to Triage Models...
-        </div>
-
-        <div class="analysis-panel" id="analysis-box">
-            <div class="panel-header">
-                <h2 id="log-name">build_failure_log.txt</h2>
-                <div id="retry-badge" class="badge">--</div>
-            </div>
-            
-            <div>
-                <h3 style="color: var(--accent-neon); margin-bottom: 0.5rem;">Root Cause Analysis</h3>
-                <p id="analysis-root-cause">Extracting data...</p>
-            </div>
-
-            <div>
-                <h3 style="color: var(--accent-green); margin-bottom: 0.5rem;">Recommended Fix</h3>
-                <p id="analysis-fix" style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 6px; border-left: 3px solid var(--accent-green);">Awaiting instructions...</p>
-            </div>
-
-            <div>
-                <h3 style="color: var(--text-dim); margin-bottom: 0.5rem;">Targeted Log Error Signature Window</h3>
-                <pre class="snippet-box" id="analysis-snippet"></pre>
+        <div id="memory" class="tab-content">
+            <header class="view-header">
+                <h1>Hindsight Memory Bank Ledger</h1>
+                <p>Persistent SQLite telemetry tracking recurring failures across historical operational cycles.</p>
+            </header>
+            <div class="panel-glass">
+                <table class="db-table">
+                    <thead>
+                        <tr>
+                            <th>Error Fingerprint Signature</th>
+                            <th>Total Recurrences</th>
+                            <th>Last Timestamp Observed</th>
+                            <th>Assigned AI Handler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="memory-table-body">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 3rem;">No telemetry data saved inside SQLite engine index tables yet. Run logs to spin database records.</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

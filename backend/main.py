@@ -1,10 +1,8 @@
-﻿from backend.agents.analyzer import LogTriageAgent
-from fastapi import FastAPI, UploadFile, File, HTTPException
+﻿from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
+from agents.analyzer import LogTriageAgent
 
-app = FastAPI(title="CI/CD Triage Agent API", version="1.0.0")
-triage_agent = LogTriageAgent()
+app = FastAPI(title="CI/CD Triage Agent Backend")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,13 +12,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+triage_agent = LogTriageAgent()
+
 @app.get("/")
-def home():
-    return {
-        "status": "online",
-        "message": "Welcome to the CI/CD Triage Agent Backend Server!",
-        "hackathon": "Microsoft Hackathon 2026"
-    }
+def read_root():
+    return {"status": "Online", "agent": "Hindsight Triage Core"}
 
 @app.post("/api/triage")
 async def triage_log(file: UploadFile = File(...)):
@@ -29,20 +25,7 @@ async def triage_log(file: UploadFile = File(...)):
     try:
         log_bytes = await file.read()
         log_text = log_bytes.decode("utf-8", errors="ignore")
-        line_count = len(log_text.splitlines())
-        return {
-            "filename": file.filename,
-            "lines_processed": line_count,
-            "status": "success",
-            "analysis": {
-                "root_cause": "Mock analysis: Server connection successful!",
-                "confidence_score": 95,
-                "retry_recommended": True,
-                "error_severity": "HIGH"
-            }
-        }
+        analysis_results = triage_agent.analyze_log(log_text, file.filename)
+        return analysis_results
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-if __name__ == "__main__":
-    uvicorn.run("main.py:app", host="127.0.0.1", port=8000, reload=True)
+        raise HTTPException(status_code=500, detail=f"AI Agent error processing file: {str(e)}")
