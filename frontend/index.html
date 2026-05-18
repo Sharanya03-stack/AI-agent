@@ -15,6 +15,7 @@
             --neon-green: #39ff14;
             --neon-purple: #9d4edd;
             --neon-red: #ff3131;
+            --neon-orange: #fca311;
             --text-main: #f8fafc;
             --text-muted: #64748b;
         }
@@ -42,7 +43,7 @@
 <body>
     <div class="container">
         <div class="sidebar">
-            <div class="brand"> Triage Control Panel</div>
+            <div class="brand">🚀 Triage Control Panel</div>
             
             <div style="padding: 15px; background: rgba(2,4,10,0.5); border: 1px solid var(--border-neon); border-radius: 8px;">
                 <h4 style="margin-bottom: 10px; color: var(--neon-cyan); font-size: 14px;">⚙️ Agent Matrix Settings</h4>
@@ -60,15 +61,15 @@
             <div style="padding: 15px; background: rgba(2,4,10,0.5); border: 1px dashed var(--border-neon); border-radius: 8px;">
                 <h4 style="margin-bottom: 12px; color: var(--neon-cyan); font-size: 14px;">⚡ Judge Quick-Test Vault</h4>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <button class="vault-btn timeout" onclick="injectMockLog('timeout')"> Simulate Net Timeout</button>
-                    <button class="vault-btn assert" onclick="injectMockLog('assert')"> Simulate Test Failure</button>
+                    <button class="vault-btn timeout" onclick="injectMockLog('timeout')">🌐 Simulate Net Timeout</button>
+                    <button class="vault-btn assert" onclick="injectMockLog('assert')">🧪 Simulate Test Failure</button>
                 </div>
             </div>
 
             <div style="flex: 1; padding: 15px; background: rgba(2,4,10,0.5); border: 1px solid var(--border-neon); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden;">
-                <h4 style="color: var(--neon-purple); font-size: 14px; margin-bottom: 10px;"> Hindsight Memory Ledger</h4>
+                <h4 style="color: var(--neon-purple); font-size: 14px; margin-bottom: 10px;">🧠 Hindsight Memory Ledger</h4>
                 <div id="ledger-list" style="flex: 1; overflow-y: auto; color: var(--text-main);">
-                    <div style="font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 20px;">No historical traces stored yet. Scan logs to populate memory indexes.</div>
+                    <div style="font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 20px;">No historical traces stored yet.</div>
                 </div>
             </div>
         </div>
@@ -78,6 +79,19 @@
                 <p style="font-size: 18px; margin-bottom: 8px;">Drag & Drop CI/CD Log Output Files Here</p>
                 <p style="color: var(--text-muted); font-size: 13px;">or click to browse your local workspace filesystem storage</p>
                 <input type="file" id="fileInput" style="display: none;" onchange="handleFileDrop(this.files[0])">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div style="padding: 15px; background: var(--card-bg); border: 1px solid rgba(252, 163, 17, 0.3); border-radius: 8px;">
+                    <h5 style="color: var(--neon-orange); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">👥 Multi-Agent Workspace Routing</h5>
+                    <div id="ent-team" style="font-size: 16px; font-weight: bold; margin-top: 8px; color: #fff;">Awaiting Dispatch Execution...</div>
+                    <div id="ent-channel" style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Broadcast Destination: --</div>
+                </div>
+                <div style="padding: 15px; background: var(--card-bg); border: 1px solid rgba(57, 255, 20, 0.3); border-radius: 8px;">
+                    <h5 style="color: var(--neon-green); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">💰 CascadeFlow FinOps Ledger</h5>
+                    <div style="font-size: 16px; font-weight: bold; margin-top: 8px; color: #fff;">Speculative Token Savings: <span id="ent-cost" style="color: var(--neon-green)">$0.00000</span></div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Inference Load Bypass Efficiency Active</div>
+                </div>
             </div>
 
             <div id="retry-gate-banner" style="padding: 12px; border-radius: 6px; font-weight: bold; text-align: center; background: var(--card-bg); border: 1px solid var(--border-neon); color: var(--text-muted); transition: 0.3s;">
@@ -93,11 +107,14 @@
 
             <div style="background: var(--card-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-neon);">
                 <h4 style="color: var(--neon-cyan); margin-bottom: 12px; font-size: 15px;">📊 Telemetry Performance Matrix</h4>
-                <canvas id="metricsChart" style="max-height: 150px;"></canvas>
+                <canvas id="metricsChart" style="max-height: 140px;"></canvas>
             </div>
 
             <div class="output-box" id="outputInspector">
-                <h3 style="color: var(--neon-cyan); margin-bottom: 15px;">🔍 Triage Execution Report</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: var(--neon-cyan);">🔍 Triage Execution Report</h3>
+                    <span id="ent-id" style="background: rgba(0,240,255,0.1); border: 1px solid var(--neon-cyan); padding: 3px 8px; border-radius: 4px; font-size: 11px; font-family: monospace; color: var(--neon-cyan);">ID: PENDING</span>
+                </div>
                 <p><strong>Detected File Target:</strong> <span id="out-file" style="color: var(--neon-green)"></span></p>
                 <p style="margin-top: 10px;"><strong>Root Cause Summary:</strong></p>
                 <div id="out-cause" style="padding: 10px; background: rgba(0,0,0,0.2); border-left: 3px solid var(--neon-cyan); margin: 5px 0; font-size: 14px;"></div>
@@ -107,13 +124,13 @@
                 <pre id="out-snippet"></pre>
 
                 <button onclick="generateGitHubIssueMarkdown()" style="margin-top: 20px; width: 100%; background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s;">
-                     Auto-Format as GitHub Issue Template
+                    🐙 Auto-Format as GitHub Issue Template
                 </button>
             </div>
 
             <div class="chat-card" style="background: var(--card-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-neon);">
                 <h4 style="color: var(--neon-cyan); margin-bottom: 12px; font-size: 15px;">💬 Live Triage Consulting Agent</h4>
-                <div id="chat-history" style="height: 130px; overflow-y: auto; background: rgba(2,4,10,0.4); padding: 10px; border-radius: 5px; font-size: 13px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
+                <div id="chat-history" style="height: 120px; overflow-y: auto; background: rgba(2,4,10,0.4); padding: 10px; border-radius: 5px; font-size: 13px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
                     <div style="color: var(--text-muted);">🤖 Ask me specific questions about applying the recommended fix patch context or lockfile adjustments...</div>
                 </div>
                 <div style="display: flex; gap: 10px;">

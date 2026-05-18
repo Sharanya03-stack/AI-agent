@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI, UploadFile, File, HTTPException, Body
+﻿from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from agents.analyzer import LogTriageAgent
@@ -15,8 +15,6 @@ app.add_middleware(
 )
 
 triage_agent = LogTriageAgent()
-
-# Internal memory storage matrix simulating persistent cloud databases across application lifecycles
 historical_incident_ledger = []
 
 class ChatRequest(BaseModel):
@@ -36,8 +34,28 @@ async def triage_log(file: UploadFile = File(...)):
         log_text = log_bytes.decode("utf-8", errors="ignore")
         analysis_results = triage_agent.analyze_log(log_text, file.filename)
         
-        # --- NEW HISTORY RETENTION INTEGRATION ---
-        # Append runtime metadata payloads directly into the global record index
+        # --- ENTERPRISE FEATURE: AUTOMATED TEAM DELEGATION ROUTING ---
+        lower_snippet = analysis_results["analysis"]["extracted_snippet"].lower()
+        if "timeout" in lower_snippet or "docker" in lower_snippet:
+            assigned_team = "⚙️ DevOps Core Infrastructure"
+            slack_channel = "#infra-alerts-critical"
+        elif "assert" in lower_snippet or "test" in lower_snippet:
+            assigned_team = "🧪 QA Automation & Frameworks"
+            slack_channel = "#qa-regression-logs"
+        elif "auth" in lower_snippet or "401" in lower_snippet:
+            assigned_team = "🔑 SecOps / Identity Team"
+            slack_channel = "#security-audit-stream"
+        else:
+            assigned_team = "💻 General Engineering Core"
+            slack_channel = "#dev-triage"
+
+        analysis_results["enterprise_routing"] = {
+            "assigned_owner_group": assigned_team,
+            "slack_destination": slack_channel,
+            "incident_id": f"TRG-{datetime.datetime.now().strftime('%M%S')}"
+        }
+
+        # Sync existing history ledger properties
         timestamp_str = datetime.datetime.now().strftime("%I:%M:%S %p")
         incident_record = {
             "time": timestamp_str,
@@ -45,13 +63,8 @@ async def triage_log(file: UploadFile = File(...)):
             "severity": analysis_results["error_severity"],
             "tier": analysis_results["analytics"]["routing_tier"]
         }
-        historical_incident_ledger.insert(0, incident_record) # Keeps latest bugs on top
-        
-        # Merge tracking lists back into the output payload dictionary structure
+        historical_incident_ledger.insert(0, incident_record)
         analysis_results["ledger_history"] = historical_incident_ledger
-        
-        # --- OPTIONAL MOCK SLACK NOTIFIER SYSTEM INJECTION ---
-        print(f"📡 [SLACK WEBHOOK DISPATCH] Alert payload broadcasted successfully for: {file.filename}")
         
         return analysis_results
     except Exception as e:

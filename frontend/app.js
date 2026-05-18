@@ -53,6 +53,16 @@ function populateDashboard(data) {
     document.getElementById('kpi-memory').innerText = `${data.hindsight_memory.historical_occurrence_count}x`;
     document.getElementById('kpi-saved').innerText = `-${data.analytics.tokens_saved_percent}%`;
     
+    // BIND ENTERPRISE LAYER PARAMETERS
+    document.getElementById('ent-id').innerText = `ID: ${data.enterprise_routing.incident_id}`;
+    document.getElementById('ent-team').innerText = data.enterprise_routing.assigned_owner_group;
+    document.getElementById('ent-channel').innerText = `Broadcast Destination: ${data.enterprise_routing.slack_destination}`;
+    
+    // CALCULATE FINOPS SPECULATIVE INFRASTRUTURE ECONOMICS
+    // Compiling fractional micro-dollar savings ratios dynamically based on token data delta gaps
+    let calculatedSavings = (parseFloat(data.analytics.tokens_saved_percent) * 0.00004).toFixed(5);
+    document.getElementById('ent-cost').innerText = `$${calculatedSavings} USD`;
+
     const banner = document.getElementById('retry-gate-banner');
     if (data.retry_recommended) {
         banner.innerText = "🟢 SAFE TO AUTO-RETRY: Transient environmental anomaly caught by CascadeFlow.";
@@ -64,12 +74,10 @@ function populateDashboard(data) {
     renderAnalyticsChart(data.analytics.tokens_saved_percent, data.hindsight_memory.historical_occurrence_count);
 }
 
-// FEATURE LAYER: DYNAMIC RE-DRAW LOOP FOR THE SIDEBAR LEDGER CONTAINERS
 function updateLedgerUI(historyList) {
     const listContainer = document.getElementById('ledger-list');
     if (!historyList || historyList.length === 0) return;
-    
-    listContainer.innerHTML = ""; // Clear loader elements
+    listContainer.innerHTML = "";
     historyList.forEach(item => {
         let colorMarker = item.severity === 'CRITICAL' ? '#ff3131' : '#9d4edd';
         listContainer.innerHTML += `
