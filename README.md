@@ -34,5 +34,11 @@ When a continuous integration or delivery pipeline breaks, developers are tradit
 * **Semantic HTML5 & Cyberpunk CSS3 Framework:** Optimized, single-page operations board designed with neon variable themes for enhanced technical scannability.
 * **Vanilla JavaScript Async Engine:** Handles cross-origin resource sharing (`CORS`) fetch callbacks cleanly with zero heavy external framework weights.
 * **Chart.js:** Fluid real-time browser canvas rendering engine mapping token compaction rates.
+  The following below are the articles done by my co-engineers:
+  -> https://dev.to/sharanya03stack/stop-feeding-gpt-4-your-raw-logs-its-costing-you-a-fortune-1ipc
+  -> https://dev.to/unna_malai_0a82f75284643d/why-your-ai-agent-keeps-hallucinating-and-how-data-testing-fixes-it-3pcb
+  -> https://dev.to/monkey_dluffy_b1914a5ff2/the-hidden-450000-leak-in-your-cicd-pipeline-and-how-to-fix-it-4o6f
+  -> https://dev.to/zoror2/building-a-command-center-for-cicd-failures-designing-the-streamlit-ui-for-our-ai-triage-agent-3jm3
+  -> https://dev.to/thanusha30byte/why-your-ai-agent-keeps-halucinating-2cbf
 
 ---
